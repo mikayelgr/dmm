@@ -64,6 +64,12 @@ val buildNative = tasks.register<Exec>("buildNative") {
     doFirst {
         println("Building native library...")
     }
+    doLast {
+        val builtLibFilename = nativeBuildDir.list().first {
+            it.endsWith(".so") or it.endsWith(".dylib") or it.endsWith(".dll")
+        }
+        println("Built native library: ${file(nativeBuildDir.resolve(builtLibFilename).absolutePath)}")
+    }
 }
 
 tasks.named("compileKotlin") {
