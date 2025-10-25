@@ -87,7 +87,7 @@ To verify the JNI implementation, you can use the Gradle wrapper that comes with
 
 ```bash
 cd jvm
-./gradlew clean build test
+./gradlew test
 ```
 
-> Note: in case of making changes to the C++ source code, you will need to implicitly run the `clean` task before testing anything in order to make sure that you're not running the cached library.
+> Note: in case of making changes to the C++ source code, it is a good idea to run the `clean` task explicitly as well (e.g. `./gradlew clean test`) before testing anything in order to make sure that you're not running the cached library. I'm not very familiar with Gradle and tried to do my best based on my research, so I might have made some mistakes while configuring its caching.

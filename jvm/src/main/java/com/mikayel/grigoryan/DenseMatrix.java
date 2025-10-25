@@ -22,7 +22,7 @@ package com.mikayel.grigoryan;
  * <p>This class performs bounds checking on all index operations and throws
  * an {@link IllegalArgumentException} if an invalid index is accessed.</p>
  */
-public class Matrix {
+public class DenseMatrix {
     /**
      * The number of rows a given matrix is going to have.
      */
@@ -48,7 +48,7 @@ public class Matrix {
      * @param cols the number of columns in the matrix
      * @throws IllegalArgumentException if either {@code rows} or {@code cols} is negative
      */
-    public Matrix(int rows, int cols) throws IllegalArgumentException {
+    public DenseMatrix(int rows, int cols) throws IllegalArgumentException {
         // Making sure that the rows and columns are non-negative
         throwOnNegativeRowColError(rows, cols);
 
@@ -73,27 +73,22 @@ public class Matrix {
      * @throws IllegalArgumentException if {@code data} is {@code null}, empty,
      *                                  or if the rows have inconsistent lengths
      */
-    public Matrix(double[][] data) throws IllegalArgumentException {
-        this(data.length, data[0].length);
+    public DenseMatrix(double[][] data) throws IllegalArgumentException {
+        if (data.length == 0) {
+            this.rows = 0;
+            this.cols = 0;
+            this.data = new double[rows];
+            return;
+        }
+
+        this.rows = data.length;
+        this.cols = data[0].length;
+        this.data = new double[rows * cols];
         int cRow = 0; // current row
         for (var row : data) {
             setRow(cRow, row);
             cRow++;
         }
-    }
-
-    /**
-     * Returns the underlying flat data array that stores the elements of this matrix.
-     * <p>
-     * The returned array is in <strong>row-major</strong> order, meaning that
-     * consecutive elements of the same row are stored next to each other in memory.
-     * Modifying this array directly will affect the matrix contents.
-     * </p>
-     *
-     * @return the internal {@code double[]} representing the matrix data
-     */
-    public double[] getData() {
-        return this.data;
     }
 
     /**
@@ -104,7 +99,8 @@ public class Matrix {
      * @return the value stored at position ({@code row}, {@code col})
      * @throws IndexOutOfBoundsException if the specified indices are outside the matrix dimensions
      */
-    public double get(int row, int col) {
+    public double get(int row, int col) throws IllegalArgumentException {
+        throwOnNegativeRowColError(row, col);
         return data[row * cols + col];
     }
 
@@ -129,7 +125,7 @@ public class Matrix {
      * @param cols Number of columns (from C++)
      * @param data Actual double[][] (from C++)
      */
-    private Matrix(int rows, int cols, double[] data) {
+    private DenseMatrix(int rows, int cols, double[] data) {
         this.rows = rows;
         this.cols = cols;
         this.data = data;
@@ -181,7 +177,7 @@ public class Matrix {
      * @return The computed matrix
      * @throws IllegalArgumentException If any of the `left` or `right` matrices are null
      */
-    public static Matrix mul(Matrix left, Matrix right)
+    public static DenseMatrix mul(DenseMatrix left, DenseMatrix right)
             throws IllegalArgumentException {
         if (left == null) throw new IllegalArgumentException("left == null");
         if (right == null) throw new IllegalArgumentException("right == null");
@@ -194,14 +190,14 @@ public class Matrix {
                 right.rows, right.cols, right.data
         );
 
-        return new Matrix(left.cols, right.cols, computed);
+        return new DenseMatrix(left.cols, right.cols, computed);
     }
 
     /**
      * Multiplies this matrix by the specified {@code right} matrix and returns the result.
      * <p>
      * This is a convenience instance method that delegates to the static
-     * {@link Matrix#mul(Matrix, Matrix)} method, which performs the actual
+     * {@link DenseMatrix#mul(DenseMatrix, DenseMatrix)} method, which performs the actual
      * multiplication.
      * </p>
      *
@@ -210,8 +206,8 @@ public class Matrix {
      * @throws IllegalArgumentException if the matrices have incompatible dimensions
      *                                  (i.e., {@code this.cols != right.rows})
      */
-    public Matrix mul(Matrix right) throws IllegalArgumentException {
-        return Matrix.mul(this, right);
+    public DenseMatrix mul(DenseMatrix right) throws IllegalArgumentException {
+        return DenseMatrix.mul(this, right);
     }
 
     /**
@@ -247,7 +243,7 @@ public class Matrix {
 
     @Override
     public boolean equals(Object m) {
-        if (m instanceof Matrix r) {
+        if (m instanceof DenseMatrix r) {
             return Bindings.eq(this.rows, this.cols, this.data, r.rows, r.cols, r.data);
         }
 
