@@ -22,6 +22,10 @@ set(JNI_INCLUDE_DIRS ${JAVA_HOME}/include)
 if(APPLE)
     # Because this was missing, there were errors about missing jni_md.h
     list(APPEND JNI_INCLUDE_DIRS ${JAVA_HOME}/include/darwin)
+elseif(UNIX)
+    list(APPEND JNI_INCLUDE_DIRS ${JAVA_HOME}/include/linux)
+elseif(WIN32)
+    list(APPEND JNI_INCLUDE_DIRS ${JAVA_HOME}/include/win32)
 endif()
 
 # Adding the Eigen library as a dependency
