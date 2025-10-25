@@ -2,7 +2,7 @@
 
 # DMM - Dense Matrix Multiplication
 
-DMM is a simple project exposes a few dense matrix multiplication functions from C++ to the JVM. The implementation is based on the [Eigen](https://eigen.tuxfamily.org/index.php?title=Main_Page) C++ library for implementing most of the multiplication functionality as efficiently as possible. I could have implemented it from scratch but existing solutions utilize the power of the modern CPUs much better using single instruction, multiple data (SIMD) and fused multiply-add (FMA) instructions.
+DMM is a simple project exposes a few dense matrix multiplication functions from C++ to the JVM. The implementation is based on the [Eigen C++ library for Linear Algebra](https://eigen.tuxfamily.org/index.php?title=Main_Page) for implementing most of the multiplication functionality as efficiently as possible. I could have implemented it from scratch but existing solutions utilize the power of the modern CPUs much better using single instruction, multiple data (SIMD) and fused multiply-add (FMA) instructions.
 
 > Note: this project has been created as a solution for the task for the JetBrains' "Graphite rendering backend support in Skiko and Compose Multiplatform" internship during 2025. This code has been authored by Mikayel Grigoryan. 
 
@@ -28,6 +28,13 @@ xcode-select --install
 ```
 
 When prompted by XCode, make sure to agree with the license agreements and follow the instructions on the screen.
+
+## Structure
+
+The project is structured in following directories:
+
+- `libdmm` - Contains the original C++ to JNI bindings for 2 functions, which are **multiplication** and **equivalence checking** of two matrices, both based on the [Eigen C++ library for Linear Algebra](https://eigen.tuxfamily.org/index.php?title=Main_Page). I decided to stand on the shoulders of giants and focus on maximizing the performance and enhancing readability.
+- `jvm` – Contains JNI implementation of the wrapper library for the JVM using Java, as well as tests, and benchmarks written in Java and Kotlin. The project also contains a pure Kotlin-based matrix multiplication algorithm for benchmarking and illustrative purposes.
 
 ## Configuration
 
@@ -93,3 +100,17 @@ cd jvm
 ```
 
 > Note: in case of making changes to the C++ source code, it is a good idea to run the `clean` task explicitly as well (e.g. `./gradlew clean test`) before testing anything in order to make sure that you're not running the cached library. I'm not very familiar with Gradle and tried to do my best based on my research, so I might have made some mistakes while configuring its caching.
+
+### Building `libdmm` Manually Using CMake
+
+To get the dynamic library for `libdmm` manually, you can run the following commands from the root directory of this project:
+
+```bash
+cd libdmm
+cmake -B build -S .
+cd build && make && cd -
+```
+
+This will compile the dynamic library into a binary compatible only with your platform. You can find the generated binary under the `build` folder inside `libdmm`.
+
+> Note that building on Windows has been tested once for now and failed due to missing dependencies. You can use your favorite Windows-native package manager in order to obtain the required libraries and binaries, in which case the library should compile in theory.
