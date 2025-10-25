@@ -18,9 +18,3 @@ jobs:
       # No need for this. Command line tools are already installed
       # - run: xcode-select --install
       - run: cd jvm && ./gradlew clean build test
-
-  jvm__build-test-windows:
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-      - run: cd jvm && .\gradlew clean build test
