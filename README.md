@@ -1,3 +1,5 @@
+[![CI](https://github.com/mikayelgr/dmm/actions/workflows/test-build.yml/badge.svg)](https://github.com/mikayelgr/dmm/actions/workflows/test-build.yml)
+
 # DMM - Dense Matrix Multiplication
 
 DMM is a simple project exposes a few dense matrix multiplication functions from C++ to the JVM. The implementation is based on the [Eigen](https://eigen.tuxfamily.org/index.php?title=Main_Page) C++ library for implementing most of the multiplication functionality as efficiently as possible. I could have implemented it from scratch but existing solutions utilize the power of the modern CPUs much better using single instruction, multiple data (SIMD) and fused multiply-add (FMA) instructions.
