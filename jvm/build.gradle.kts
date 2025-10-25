@@ -1,4 +1,4 @@
-import org.gradle.internal.os.OperatingSystem
+import java.io.File
 
 plugins {
     kotlin("jvm") version "2.2.20"
@@ -15,63 +15,19 @@ dependencies {
     testImplementation(kotlin("test"))
 }
 
-tasks.test {
-    useJUnitPlatform()
-}
-
 kotlin {
     jvmToolchain(21)
 }
 
-// ---------- Native Library Build Configuration ----------
+tasks.test {
+    useJUnitPlatform()
+}
 
-val nativeRootDir = file("../libdmm")
+// Root of the C++ JNI project
+val nativeRootDir = file(rootProject.projectDir.resolve("../libdmm"))
 val nativeBuildDir = nativeRootDir.resolve("build")
 
-// Step 1. Configure CMake (generate Makefiles)
-tasks.register<Exec>("configureCMake") {
-    group = "build"
-    description = "Configures CMake and generates Makefiles for the native library"
-
-    doFirst {
-        if (!nativeBuildDir.exists()) nativeBuildDir.mkdirs()
-    }
-
-    workingDir = nativeRootDir
-
-    commandLine(
-        "cmake",
-        "-S", ".",
-        "-B", "build",
-        "-DCMAKE_BUILD_TYPE=Release",
-        "-G", "Unix Makefiles"
-    )
-}
-
-// Step 2. Build native code using make
-tasks.register<Exec>("makeNative") {
-    group = "build"
-    description = "Builds the native C++ library using make"
-
-    dependsOn("configureCMake")
-    workingDir = nativeBuildDir
-    commandLine("make", "-j${Runtime.getRuntime().availableProcessors()}")
-
-    inputs.dir(nativeRootDir.resolve("src"))
-    inputs.file(nativeRootDir.resolve("CMakeLists.txt"))
-    outputs.dir(nativeBuildDir)
-}
-
-tasks.named("compileKotlin") {
-    dependsOn("makeNative")
-}
-
-tasks.named("compileJava") {
-    dependsOn("makeNative")
-}
-
-// Append our native build directory to java.library.path, because we don't want
-// to install the library system-wide.
+// Extend java.library.path for JNI loading
 fun extendJavaLibraryPath(): String {
     val existing = System.getProperty("java.library.path") ?: ""
     val combined = listOf(existing, nativeBuildDir.absolutePath)
@@ -81,20 +37,53 @@ fun extendJavaLibraryPath(): String {
     return combined
 }
 
-tasks.withType<Test> {
-    systemProperty("java.library.path", extendJavaLibraryPath())
-}
+val configureNative = tasks.register<Exec>("configureNative") {
+    group = "build"
+    description = "Configure the native CMake build system"
 
-tasks.withType<JavaExec> {
-    systemProperty("java.library.path", extendJavaLibraryPath())
-}
-
-// ---------- Clean Native Build Directory ----------
-// Ensure native CMake build folder is deleted when running `./gradlew clean`
-tasks.named<Delete>("clean") {
-    delete(nativeBuildDir)
+    workingDir = nativeRootDir
+    commandLine(
+        "cmake",
+        "-S", ".",
+        "-B", "build",
+        "-DCMAKE_BUILD_TYPE=Release"
+    )
     doFirst {
-        println("Cleaning native build folder: ${nativeBuildDir.absolutePath}")
+        println("Configuring native build system in $nativeBuildDir")
     }
 }
 
+val buildNative = tasks.register<Exec>("buildNative") {
+    group = "build"
+    description = "Build the native JNI library using CMake"
+
+    dependsOn(configureNative)
+    workingDir = nativeRootDir
+    commandLine("cmake", "--build", "build", "--config", "Release")
+
+    doFirst {
+        println("Building native library...")
+    }
+}
+
+tasks.named("compileKotlin") {
+    dependsOn(buildNative)
+}
+tasks.named("compileJava") {
+    dependsOn(buildNative)
+}
+tasks.withType<Test> {
+    dependsOn(buildNative)
+    systemProperty("java.library.path", extendJavaLibraryPath())
+}
+tasks.withType<JavaExec> {
+    dependsOn(buildNative)
+    systemProperty("java.library.path", extendJavaLibraryPath())
+}
+
+tasks.named<Delete>("clean") {
+    doFirst {
+        println("Cleaning native build folder: ${nativeBuildDir.absolutePath}")
+    }
+    delete(nativeBuildDir)
+}
