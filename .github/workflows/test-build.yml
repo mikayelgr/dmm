@@ -6,12 +6,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - run: sudo apt update
+      - run: sudo apt install -y openjdk-21-jdk build-essential cmake gcc libeigen3-dev
       - run: cd jvm && ./gradlew clean build test
 
   jvm__build-test-macos:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
+      - run: brew install cmake eigen openjdk@21
+      - run: xcode-select --install
       - run: cd jvm && ./gradlew clean build test
 
   jvm__build-test-windows:
