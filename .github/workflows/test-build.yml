@@ -1,0 +1,21 @@
+name: CI
+on: [push]
+
+jobs:
+  jvm__build-test-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: cd jvm && ./gradlew clean build test
+
+  jvm__build-test-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: cd jvm && ./gradlew clean build test
+
+  jvm__build-test-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: cd jvm && .\gradlew clean build test
