@@ -7,10 +7,12 @@ package com.mikayel.grigoryan;
  * which is a safe Matrix wrapper for this class.
  */
 final class Bindings {
+    static final String LIBRARY_NAME = "dmm";
+
     static {
         // Since the dynamic library is already included in the Java's path in the
         // build step, we can load it directly with its name by calling loadLibrary.
-        System.loadLibrary("dmm");
+        System.loadLibrary(LIBRARY_NAME);
     }
 
     /**
