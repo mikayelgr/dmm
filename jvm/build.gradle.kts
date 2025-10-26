@@ -42,16 +42,10 @@ val configureNative = tasks.register<Exec>("configureNative") {
     description = "Configure the native CMake build system"
 
     workingDir = nativeRootDir
-    commandLine(
-        "cmake",
-        "-S", ".",
-        "-B", "build",
-        "-DCMAKE_BUILD_TYPE=Release",
+    commandLine = listOf(
+        "cmake", "-S", ".", "-B", "build", "-DCMAKE_BUILD_TYPE=Release",
         "-DDMM_BUILD_JNI=1"
     )
-    doFirst {
-        println("Configuring native build system in $nativeBuildDir")
-    }
 }
 
 val buildNative = tasks.register<Exec>("buildNative") {
@@ -60,17 +54,7 @@ val buildNative = tasks.register<Exec>("buildNative") {
 
     dependsOn(configureNative)
     workingDir = nativeRootDir
-    commandLine("cmake", "--build", "build", "--config", "Release")
-
-    doFirst {
-        println("Building native library...")
-    }
-    doLast {
-        val builtLibFilename = nativeBuildDir.list().first {
-            it.endsWith(".so") or it.endsWith(".dylib") or it.endsWith(".dll")
-        }
-        println("Built native library: ${file(nativeBuildDir.resolve(builtLibFilename).absolutePath)}")
-    }
+    commandLine("cmake", "--build", "${nativeRootDir.absolutePath}/build", "--config", "Release")
 }
 
 tasks.named("compileKotlin") {
@@ -89,8 +73,5 @@ tasks.withType<JavaExec> {
 }
 
 tasks.named<Delete>("clean") {
-    doFirst {
-        println("Cleaning native build folder: ${nativeBuildDir.absolutePath}")
-    }
     delete(nativeBuildDir)
 }
