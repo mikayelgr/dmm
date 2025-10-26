@@ -13,7 +13,7 @@ class DenseMatrix internal constructor(
     val cols: Int,
     internal val dataPtr: CPointer<DoubleVar>,
     private val nativeHandle: CPointer<BindingsMatrixHandle>? = null
-): AutoCloseable {
+) : AutoCloseable {
     /** Read element (row, col) directly from native memory. */
     operator fun get(row: Int, col: Int): Double {
         require(row in 0 until rows && col in 0 until cols)
@@ -28,8 +28,9 @@ class DenseMatrix internal constructor(
 
     /** Optional deterministic cleanup (e.g., inside loops or benchmarks). */
     override fun close() {
-        val handle = nativeHandle ?: return // Already freed
-        bindingsFreeMatrix(handle)
+        nativeHandle?.let {
+            bindingsFreeMatrix(it)
+        }
     }
 
     override fun toString(): String {
@@ -50,22 +51,23 @@ class DenseMatrix internal constructor(
 /** Performs matrix multiplication via native Eigen, zero-copy result. */
 @OptIn(ExperimentalForeignApi::class)
 fun mul(left: DenseMatrix, right: DenseMatrix): DenseMatrix {
-    require(left.cols == right.rows) {
-        "Incompatible dimensions: left.cols=${left.cols}, right.rows=${right.rows}"
+    if (left.cols != right.rows) {
+        throw IllegalArgumentException("Incompatible dimensions: left.cols=${left.cols}, right.rows=${right.rows}")
     }
 
-    val handlePtr = bindingsMul(
+    // We assume that the pointer will never be null, since all the parameters are
+    // passed down correctly. The only edge case which might happen is the computer
+    // runs out of memory, which is less probable.
+    val nativeHandle = bindingsMul(
         left.rows, left.cols, left.dataPtr,
         right.rows, right.cols, right.dataPtr
-    ) ?: error("Native returned null pointer")
+    )!!
 
-    val handle = handlePtr.pointed
-    val dataPtr = handle.data ?: error("Handle contained null data pointer")
-    val rows = handle.rows
-    val cols = handle.cols
-
+    val rows = nativeHandle.pointed.rows
+    val cols = nativeHandle.pointed.cols
+    val dataPtr = nativeHandle.pointed.data!!
     // Automatic cleanup registered by DenseMatrix constructor
-    return DenseMatrix(rows, cols, dataPtr, handlePtr)
+    return DenseMatrix(rows, cols, dataPtr, nativeHandle)
 }
 
 /** Compares two matrices using Eigen::isApprox (tolerance-aware). */
