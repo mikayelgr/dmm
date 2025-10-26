@@ -7,6 +7,8 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 set(DMM_LIBRARY_NAME dmm)
 set(DMM_SRC_PATH ${CMAKE_SOURCE_DIR}/src)
+set(DMM_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/include)
+set(DMM_BUILD_JNI OFF CACHE BOOL "Build JNI bindings")
 
 # Ensuring that the JAVA_HOME environment variable is set
 if(NOT EXISTS $ENV{JAVA_HOME})
@@ -25,7 +27,7 @@ if(APPLE)
 elseif(UNIX)
     list(APPEND JNI_INCLUDE_DIRS ${JAVA_HOME}/include/linux)
 elseif(WIN32)
-    list(APPEND JNI_INCLUDE_DIRS ${JAVA_HOME}/include/win32)
+    message(FATAL_ERROR "Windows is not supported for this library.")
 endif()
 
 # Adding the Eigen library as a dependency
@@ -36,19 +38,25 @@ else()
     message(FATAL_ERROR "System Eigen not found.")
 endif()
 
-# Making sure that the binary is compiled as a dynamic library
-add_library(${DMM_LIBRARY_NAME} SHARED ${DMM_SRC_PATH}/dmm.cpp)
-
-target_include_directories(${DMM_LIBRARY_NAME} PUBLIC
-    ${CMAKE_SOURCE_DIR}/include
+# Conditional compilation of the JNI bindings
+if (DMM_BUILD_JNI)
+    # JNI library: JNI bindings, depends on base
+    add_library(dmm SHARED
+        ${DMM_INCLUDE_DIR}/dmm.h
+        ${DMM_SRC_PATH}/dmm.cpp
+    )
+    target_include_directories(dmm PUBLIC
+        ${DMM_INCLUDE_DIR}
     ${EIGEN3_INCLUDE_DIR}
     ${JNI_INCLUDE_DIRS}
 )
+    target_link_libraries(dmm PRIVATE base)
 
-set_target_properties(${DMM_LIBRARY_NAME} PROPERTIES
+    set_target_properties(dmm PROPERTIES
     LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}
 )
+endif()
 
 message(STATUS "Output directory: ${CMAKE_BINARY_DIR}")
 message(STATUS "JNI include dirs: ${JNI_INCLUDE_DIRS}")
