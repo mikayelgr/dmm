@@ -16,27 +16,27 @@ class DenseMatrix internal constructor(
 ) : AutoCloseable {
     /** Read element (row, col) directly from native memory. */
     operator fun get(row: Int, col: Int): Double {
-        require(row in 0 until rows && col in 0 until cols)
-        return dataPtr[row * cols + col]
+        require(row in 0 until this.rows && col in 0 until this.cols)
+        return this.dataPtr[row * this.cols + col]
     }
 
     /** Write element (row, col) directly to native memory. */
     operator fun set(row: Int, col: Int, value: Double) {
         require(row in 0 until rows && col in 0 until cols)
-        dataPtr[row * cols + col] = value
+        this.dataPtr[row * this.cols + col] = value
     }
 
     /** Optional deterministic cleanup (e.g., inside loops or benchmarks). */
     override fun close() {
-        nativeHandle?.let {
+        this.nativeHandle?.let {
             bindingsFreeMatrix(it)
         }
     }
 
     override fun toString(): String {
         val sb = StringBuilder()
-        for (i in 0 until rows) {
-            for (j in 0 until cols) sb.append("${get(i, j)}\t")
+        for (i in 0 until this.rows) {
+            for (j in 0 until this.cols) sb.append("${get(i, j)}\t")
             sb.appendLine()
         }
         return sb.toString()
@@ -74,7 +74,7 @@ fun mul(left: DenseMatrix, right: DenseMatrix): DenseMatrix {
 @OptIn(ExperimentalForeignApi::class)
 fun DenseMatrix.equalsApprox(other: DenseMatrix, tolerance: Double = 1e-6): Boolean {
     return bindingsEq(
-        rows, cols, dataPtr,
+        this.rows, this.cols, this.dataPtr,
         other.rows, other.cols, other.dataPtr,
         tolerance
     ) != 0
