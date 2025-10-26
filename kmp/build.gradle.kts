@@ -5,7 +5,7 @@ plugins {
     alias(libs.plugins.kotlinxSerialization)
 }
 
-group = "grigoryan"
+group = "com.mikayel.grigoryan"
 version = "1.0-SNAPSHOT"
 
 repositories {
@@ -61,12 +61,21 @@ val configureDmmDependency = tasks.register<Exec>("buildDmmDependency") {
     description = "Builds the DMM dependency with CMake and Make"
 
     workingDir = libdmmRoot
-    commandLine = listOf("cmake", "-S", ".", "-B", "${libdmmRoot.absolutePath}/build", "-DCMAKE_BUILD_TYPE=Release", "-DDMM_BUILD_JNI=1")
+    commandLine = listOf(
+        "cmake",
+        "-S",
+        ".",
+        "-B",
+        "${libdmmRoot.absolutePath}/build",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DDMM_BUILD_JNI=1"
+    )
 }
 
 val buildDmmDependency = tasks.register<Exec>("buildDmmDependencyMake") {
     group = "build"
     description = "Builds the DMM dependency with CMake and Make"
+
     dependsOn(configureDmmDependency)
     workingDir = libdmmRoot
     commandLine = listOf("cmake", "--build", "${libdmmRoot.absolutePath}/build", "--config", "Release")
@@ -74,4 +83,9 @@ val buildDmmDependency = tasks.register<Exec>("buildDmmDependencyMake") {
 
 tasks.withType<CInteropProcess> {
     dependsOn(buildDmmDependency)
+}
+
+tasks.withType<Delete> {
+    // Cleaning the library build path as well
+    delete(libdmmRoot.resolve("build"))
 }
