@@ -1,17 +1,18 @@
 package com.mikayel.grigoryan
 
 import kotlinx.cinterop.*
-import com.mikayel.grigoryan.libdmmbase.cinterop.*
-import kotlin.experimental.ExperimentalNativeApi
-import kotlin.native.ref.Cleaner
+import com.mikayel.grigoryan.libdmmbase.cinterop.eq as bindingsEq
+import com.mikayel.grigoryan.libdmmbase.cinterop.mul as bindingsMul
+import com.mikayel.grigoryan.libdmmbase.cinterop.free_matrix as bindingsFreeMatrix
+import com.mikayel.grigoryan.libdmmbase.cinterop.MatrixHandle as BindingsMatrixHandle
 
 @OptIn(ExperimentalForeignApi::class)
 class DenseMatrix internal constructor(
     val rows: Int,
     val cols: Int,
     internal val dataPtr: CPointer<DoubleVar>,
-    private val nativeHandle: CPointer<MatrixHandle>? = null
-) {
+    private val nativeHandle: CPointer<BindingsMatrixHandle>? = null
+): AutoCloseable {
     /** Read element (row, col) directly from native memory. */
     operator fun get(row: Int, col: Int): Double {
         require(row in 0 until rows && col in 0 until cols)
@@ -24,19 +25,16 @@ class DenseMatrix internal constructor(
         dataPtr[row * cols + col] = value
     }
 
-    // Cleaner that frees the matrix when the object is collected
-    @OptIn(ExperimentalNativeApi::class)
-    private val cleaner: Cleaner? = nativeHandle?.let { handle ->
-        Cleaner.create(this) {
-            // Will be executed once the DenseMatrix is unreachable
-            free_matrix(handle)
-        }
+    /** Optional deterministic cleanup (e.g., inside loops or benchmarks). */
+    override fun close() {
+        val handle = nativeHandle ?: return // Already freed
+        bindingsFreeMatrix(handle)
     }
 
     override fun toString(): String {
         val sb = StringBuilder()
         for (i in 0 until rows) {
-            for (j in 0 until cols) sb.append(get(i, j).toString() + "\t")
+            for (j in 0 until cols) sb.append("${get(i, j)}\t")
             sb.appendLine()
         }
         return sb.toString()
@@ -50,7 +48,7 @@ fun mul(left: DenseMatrix, right: DenseMatrix): DenseMatrix {
         "Incompatible dimensions: left.cols=${left.cols}, right.rows=${right.rows}"
     }
 
-    val handlePtr = mul(
+    val handlePtr = bindingsMul(
         left.rows, left.cols, left.dataPtr,
         right.rows, right.cols, right.dataPtr
     ) ?: error("Native returned null pointer")
@@ -64,11 +62,10 @@ fun mul(left: DenseMatrix, right: DenseMatrix): DenseMatrix {
     return DenseMatrix(rows, cols, dataPtr, handlePtr)
 }
 
-
 /** Compares two matrices using Eigen::isApprox (tolerance-aware). */
 @OptIn(ExperimentalForeignApi::class)
 fun DenseMatrix.equalsApprox(other: DenseMatrix, tolerance: Double = 1e-6): Boolean {
-    return eq(
+    return bindingsEq(
         rows, cols, dataPtr,
         other.rows, other.cols, other.dataPtr,
         tolerance

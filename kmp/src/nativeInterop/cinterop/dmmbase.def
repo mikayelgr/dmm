@@ -1,0 +1,4 @@
+package = com.mikayel.grigoryan.libdmmbase.cinterop
+# All options are relative to this project's root kmp
+linkerOpts = -L../libdmm/build -ldmmbase
+headers = dmmbase.h
