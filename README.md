@@ -136,4 +136,4 @@ cd kmp
 ./gradlew test
 ```
 
-> Note that this setup assumes that you've built the `libdmm` library as described during the previous steps. (TODO) For now, the Kotlin Native implementation doesn't build the library automatically via Gradle.
+> Kotlin Native implementation, similar to the JNI implementation, builds the library automatically via Gradle tasks before C interop process happens, to make sure all libraries exist.

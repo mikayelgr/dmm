@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.tasks.CInteropProcess
+
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.kotlinxSerialization)
@@ -52,4 +54,24 @@ kotlin {
             }
         }
     }
+}
+
+val configureDmmDependency = tasks.register<Exec>("buildDmmDependency") {
+    group = "build"
+    description = "Builds the DMM dependency with CMake and Make"
+
+    workingDir = libdmmRoot
+    commandLine = listOf("cmake", "-S", ".", "-B", "${libdmmRoot.absolutePath}/build", "-DCMAKE_BUILD_TYPE=Release", "-DDMM_BUILD_JNI=1")
+}
+
+val buildDmmDependency = tasks.register<Exec>("buildDmmDependencyMake") {
+    group = "build"
+    description = "Builds the DMM dependency with CMake and Make"
+    dependsOn(configureDmmDependency)
+    workingDir = libdmmRoot
+    commandLine = listOf("cmake", "--build", "${libdmmRoot.absolutePath}/build", "--config", "Release")
+}
+
+tasks.withType<CInteropProcess> {
+    dependsOn(buildDmmDependency)
 }
