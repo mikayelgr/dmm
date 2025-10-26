@@ -119,7 +119,7 @@ class DenseMatrixTests {
     fun testMatrixMultiplication_incompatibleDimensions() {
         val a = createMatrix(2, 3, doubleArrayOf(1.0, 2.0, 3.0, 4.0, 5.0, 6.0))
         val b = createMatrix(4, 2, DoubleArray(8) { 1.0 })
-        assertFailsWith<IllegalArgumentException> {
+        assertFailsWith<MatrixOperationException> {
             mul(a, b)
         }
     }
