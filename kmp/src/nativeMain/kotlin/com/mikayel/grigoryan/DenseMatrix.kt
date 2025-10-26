@@ -6,6 +6,7 @@ import com.mikayel.grigoryan.libdmmbase.cinterop.mul as bindingsMul
 import com.mikayel.grigoryan.libdmmbase.cinterop.free_matrix as bindingsFreeMatrix
 import com.mikayel.grigoryan.libdmmbase.cinterop.MatrixHandle as BindingsMatrixHandle
 
+@Suppress("EqualsOrHashCode")
 @OptIn(ExperimentalForeignApi::class)
 class DenseMatrix internal constructor(
     val rows: Int,
@@ -38,6 +39,11 @@ class DenseMatrix internal constructor(
             sb.appendLine()
         }
         return sb.toString()
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (other is DenseMatrix) return equalsApprox(other)
+        return super.equals(other)
     }
 }
 
