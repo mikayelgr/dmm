@@ -46,8 +46,6 @@ The project is structured in following directories:
 - `jvm` – Contains JNI implementation of the wrapper library for the JVM using Java, as well as tests, and benchmarks written in Java and Kotlin.
 - `kmp` - Contains Kotlin Native/Multiplatform bindings implementation, as well as tests, and benchmarks written in Kotlin.
 
-> `jvm` and `kmp` contain a pure Kotlin-based matrix multiplication algorithm for (TODO)benchmarking, as stated in the requirements of the task handed by JetBrains.
-
 ## Configuration
 
 The `libdmm` directory contains the C++ source code of the implementation of the bridge interface. It exposes a few function from `src/dmm.cpp` using the Java Native Interface (JNI) so that the functions are accessible from any JVM language contexts. Before building, you must ensure that the `JAVA_HOME` environment variable is set. In our case, you can obtain the variable by entering:
@@ -122,7 +120,7 @@ To verify the JNI implementation, you can use the Gradle wrapper that comes with
 
 ```bash
 cd jvm
-./gradlew test
+./gradlew test --console=plain
 ```
 
 > Note: in case of making changes to the C++ source code, it is a good idea to run the `clean` task explicitly as well (e.g. `./gradlew clean test`) before testing anything in order to make sure that you're not running the cached library. I'm not very familiar with Gradle and tried to do my best based on my research, so I might have made some mistakes while configuring its caching.
@@ -133,7 +131,64 @@ The project for Kotlin Native bindings has been boostrapped from the official re
 
 ```bash
 cd kmp
-./gradlew test
+./gradlew nativeTest
 ```
 
 > Kotlin Native implementation, similar to the JNI implementation, builds the library automatically via Gradle tasks before C interop process happens, to make sure all libraries exist.
+
+## Ending Notes
+
+While I have tried to implement WASM/JS support as well as benchmarking with kotlinx-benchmark framework, I was constantly hitting some weird issues with my benchmarks and some of the files not being recognized as actual benchmark files. I believe that this might be due to the fact that I'm new to the Kotlin Native platform. While I have tried using AI tools as well, they got me nowhere.
+
+For that reason I have included my pure Kotlin implementation of the simple matrix multiplication algorithm below, in case we manage to benchmark them sometime:
+
+```kotlin
+package com.mikayel.grigoryan
+
+fun mul(left: Array<Array<Double>>, right: Array<Array<Double>>): Array<Array<Double>> {
+    val lDims = getMatrixDimensions(left)
+    val rDims = getMatrixDimensions(right)
+    validateMatrices(left, lDims, right, rDims)
+
+    val row1 = lDims[0]
+    val col1 = lDims[1]
+    val col2 = rDims[1]
+    val product = Array(row1) { Array(col2) { 0.0 } }
+
+    for (i in 0 until row1) {
+        for (j in 0 until col2) {
+            for (k in 0 until col1) {
+                product[i][j] += left[i][k] * right[k][j]
+            }
+        }
+    }
+
+    return product
+}
+
+private fun validateMatrices(
+    left: Array<Array<Double>>, lDims: Array<Int>,
+    right: Array<Array<Double>>, rDims: Array<Int>,
+) {
+    assert(validateMatrixCols(lDims, left)) { "Left matrix is inconsistent" }
+    assert(validateMatrixCols(rDims, right)) { "Right matrix is inconsistent" }
+    assert(lDims[1] == rDims[0]) { "Number of columns of the left matrix != to number of rows on right matrix" }
+}
+
+private fun getMatrixDimensions(matrix: Array<Array<Double>>): Array<Int> {
+    val nRows = matrix.size
+    // Assuming the matrix is set to its first column's size
+    val nCols = matrix.getOrNull(nRows)?.size ?: 0
+    return arrayOf(nRows, nCols)
+}
+
+private fun validateMatrixCols(dims: Array<Int>, matrix: Array<Array<Double>>): Boolean {
+    for (i in 0 until dims[0]) {
+        if (matrix[i].size != dims[1]) {
+            return false
+        }
+    }
+
+    return true
+}
+```
