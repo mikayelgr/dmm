@@ -2,6 +2,9 @@
 <project version="4">
   <component name="CompilerConfiguration">
     <bytecodeTargetLevel>
+      <module name="kmp.library" target="21" />
+      <module name="kmp.library.jvmMain" target="21" />
+      <module name="kmp.library.jvmTest" target="21" />
       <module name="multiplatform-library-template.library" target="21" />
       <module name="multiplatform-library-template.library.jvmMain" target="21" />
       <module name="multiplatform-library-template.library.jvmTest" target="21" />

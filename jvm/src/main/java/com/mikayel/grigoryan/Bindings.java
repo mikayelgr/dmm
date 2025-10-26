@@ -50,16 +50,18 @@ final class Bindings {
      *     <li>{@code lRows == rRows} and {@code lCols == rCols} must hold true for a valid comparison.</li>
      * </ul>
      *
-     * @param lRows  the number of rows in the left-hand matrix
-     * @param lCols  the number of columns in the left-hand matrix
-     * @param left   the flattened row-major data of the left-hand matrix
-     * @param rRows  the number of rows in the right-hand matrix
-     * @param rCols  the number of columns in the right-hand matrix
-     * @param right  the flattened row-major data of the right-hand matrix
+     * @param lRows     the number of rows in the left-hand matrix
+     * @param lCols     the number of columns in the left-hand matrix
+     * @param left      the flattened row-major data of the left-hand matrix
+     * @param rRows     the number of rows in the right-hand matrix
+     * @param rCols     the number of columns in the right-hand matrix
+     * @param right     the flattened row-major data of the right-hand matrix
+     * @param tolerance the error tolerance for comparison, since floating point comparison is problematic sometimes
      * @return {@code true} if both matrices are equal within the defined numerical tolerance;
-     *         {@code false} otherwise
+     * {@code false} otherwise
      */
     public static native boolean eq(
             int lRows, int lCols, double[] left,
-            int rRows, int rCols, double[] right);
+            int rRows, int rCols, double[] right,
+            double tolerance);
 }

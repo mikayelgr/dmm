@@ -7,9 +7,10 @@ package com.mikayel.grigoryan;
  * allowing direct mapping to contiguous memory structures (e.g., Eigen matrices
  * in C++).
  *
- * <p>The matrix is row-major, meaning that elements are stored row by row in
- * the underlying {@code double[]} array. The element at position (row, col)
- * is located at index {@code row * cols + col}.</p>
+ * <p></p>
+ * <li>The matrix is row-major (stored row-by-row)</li>
+ * <li>Individual elements are located at {@code row * cols + col}</li>
+ * <li>Default error tolerance is set to {@code 10e-6}.
  *
  * <p>Example usage:</p>
  * <pre>{@code
@@ -23,6 +24,12 @@ package com.mikayel.grigoryan;
  * an {@link IllegalArgumentException} if an invalid index is accessed.</p>
  */
 public class DenseMatrix {
+    /**
+     * Error tolerance for this and the right comparable matrix. Default
+     * value is <code>10e-6</code>.
+     */
+    private double errorTolerance = 10e-6;
+
     /**
      * The number of rows a given matrix is going to have.
      */
@@ -58,6 +65,65 @@ public class DenseMatrix {
         // This way, we avoid the complexity of passing 2D array data to the JNI, which
         // in turn helps us with indexing from the C++ side.
         this.data = new double[rows * cols];
+    }
+
+    /**
+     * Sets the numerical error tolerance used by this {@code Matrix} instance.
+     * <p>
+     * The error tolerance defines the acceptable margin of error for floating-point
+     * operations such as matrix equality checks. Smaller values increase precision
+     * but may amplify floating-point instability; larger values relax strict equality
+     * checks at the cost of accuracy.
+     * </p>
+     *
+     * @param errorTolerance the non-negative tolerance threshold for floating-point errors
+     * @throws IllegalArgumentException if {@code errorTolerance} is negative
+     *
+     * <p><b>Example:</b></p>
+     * <pre>{@code
+     * Matrix m1 = new Matrix(...);
+     * Matrix m2 = new Matrix(...);
+     * m1.setErrorTolerance(1e-9); // High precision
+     *
+     * if (m1.equals(m2)) {
+     *     System.out.println("Matrices are equal within tolerance.");
+     * }
+     * }</pre>
+     *
+     * @see #getErrorTolerance()
+     * @see #equals(Object)
+     */
+    public void setErrorTolerance(double errorTolerance) throws IllegalArgumentException {
+        if (errorTolerance < 0) {
+            throw new IllegalArgumentException("Error tolerance must be non-negative.");
+        }
+
+        this.errorTolerance = errorTolerance;
+    }
+
+    /**
+     * Returns the current numerical error tolerance used by this {@code Matrix} instance.
+     * <p>
+     * The error tolerance defines the acceptable deviation for floating-point
+     * operations such as equality checks. It is used internally to account for
+     * small rounding errors that naturally occur during matrix computations.
+     * </p>
+     *
+     * @return the current error tolerance value (always non-negative)
+     *
+     * <p><b>Example:</b></p>
+     * <pre>{@code
+     * Matrix m = new Matrix(...);
+     * m.setErrorTolerance(1e-6);
+     * System.out.println("Tolerance: " + m.getErrorTolerance());
+     * // Output: Tolerance: 1.0E-6
+     * }</pre>
+     *
+     * @see #setErrorTolerance(double)
+     * @see #equals(Object)
+     */
+    public double getErrorTolerance() {
+        return errorTolerance;
     }
 
     /**
@@ -244,7 +310,7 @@ public class DenseMatrix {
     @Override
     public boolean equals(Object m) {
         if (m instanceof DenseMatrix r) {
-            return Bindings.eq(this.rows, this.cols, this.data, r.rows, r.cols, r.data);
+            return Bindings.eq(this.rows, this.cols, this.data, r.rows, r.cols, r.data, this.errorTolerance);
         }
 
         return false;
