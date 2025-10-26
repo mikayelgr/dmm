@@ -2,9 +2,9 @@
 
 # DMM - Dense Matrix Multiplication
 
-DMM is a simple project exposes a few dense matrix multiplication functions from C++ to the JVM. The implementation is based on the [Eigen C++ library for Linear Algebra](https://eigen.tuxfamily.org/index.php?title=Main_Page) for implementing most of the multiplication functionality as efficiently as possible. I could have implemented it from scratch but existing solutions utilize the power of the modern CPUs much better using single instruction, multiple data (SIMD) and fused multiply-add (FMA) instructions.
+DMM is a simple project exposes a few dense matrix multiplication functions from C++ to the JVM. The implementation is based on the [Eigen C++ library for Linear Algebra](https://eigen.tuxfamily.org/index.php?title=Main_Page) for implementing most of the multiplication functionality as efficiently as possible. I could have implemented it from scratch but existing solutions utilize the power of the modern CPUs much better using single instruction, multiple data (SIMD) and fused multiply-add (FMA) instructions. The project is supported on Linux and macOS. Support on Windows has not been tested.
 
-> Note: this project has been created as a solution for the task for the JetBrains' "Graphite rendering backend support in Skiko and Compose Multiplatform" internship during 2025. This code has been authored by Mikayel Grigoryan. 
+> Note: this project has been created as a solution for the task for the JetBrains' "Graphite rendering backend support in Skiko and Compose Multiplatform" internship during 2025. This code has been authored by Mikayel Grigoryan.
 
 ## Introduction
 

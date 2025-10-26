@@ -9,7 +9,7 @@ jobs:
       - run: sudo apt update
       - run: sudo apt install -y openjdk-21-jdk
       - run: cd libdmm && cmake -S . -B build && cmake --build build && cd -
-      - run: cd kmp && ./gradlew clean build test
+      - run: cd kmp && ./gradlew clean build nativeTest
 
   jni__build-test-linux:
     runs-on: ubuntu-latest
@@ -25,7 +25,7 @@ jobs:
       - uses: actions/checkout@v4
       - run: brew install cmake eigen openjdk@21
       - run: cd libdmm && cmake -S . -B build && cmake --build build && cd -
-      - run: cd kmp && ./gradlew clean build test
+      - run: cd kmp && ./gradlew clean build nativeTest
 
   jni__build-test-macos:
     runs-on: macos-latest
