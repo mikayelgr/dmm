@@ -53,7 +53,7 @@ target_include_directories(dmmbase PUBLIC
 if (DMM_BUILD_JNI)
     # JNI library: JNI bindings, depends on base
     add_library(dmmjni SHARED
-        ${DMM_INCLUDE_DIR}/dmmjni.h
+        ${DMM_INCLUDE_DIR}/dmmjni.hpp
         ${DMM_SRC_PATH}/dmmjni.cpp
     )
     target_include_directories(dmmjni PUBLIC
