@@ -84,9 +84,5 @@ class DenseMatrixTests {
         val result = mul(a, b)
         println("Result (for cleaner test):")
         println(result)
-
-        // Let 'result' go out of scope. The Cleaner will free it automatically.
-        // You can manually trigger cleanup:
-        GC.collect() // force cleanup
     }
 }
