@@ -13,6 +13,7 @@ repositories {
 
 dependencies {
     testImplementation(kotlin("test"))
+    testImplementation("org.junit.jupiter:junit-jupiter:5.11.4")
 }
 
 kotlin {
@@ -21,6 +22,12 @@ kotlin {
 
 tasks.test {
     useJUnitPlatform()
+    testLogging {
+        events("passed", "skipped", "failed", "standardOut", "standardError")
+        showCauses = true
+        showStackTraces = true
+        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+    }
 }
 
 // Root of the C++ JNI project
@@ -43,8 +50,7 @@ val configureNative = tasks.register<Exec>("configureNative") {
 
     workingDir = nativeRootDir
     commandLine = listOf(
-        "cmake", "-S", ".", "-B", "build", "-DCMAKE_BUILD_TYPE=Release",
-        "-DDMM_BUILD_JNI=1"
+        "cmake", "-S", ".", "-B", "build", "-DCMAKE_BUILD_TYPE=Release", "-DDMM_BUILD_BASE=0"
     )
 }
 

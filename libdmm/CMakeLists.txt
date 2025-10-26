@@ -8,6 +8,7 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(DMM_LIBRARY_NAME dmm)
 set(DMM_SRC_PATH ${CMAKE_SOURCE_DIR}/src)
 set(DMM_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/include)
+set(DMM_BUILD_BASE ON CACHE BOOL "Build base C interop of the DMM library")
 set(DMM_BUILD_JNI ON CACHE BOOL "Build JNI bindings")
 
 # Ensuring that the JAVA_HOME environment variable is set
@@ -39,15 +40,18 @@ else()
 endif()
 
 
-# Base library: core logic only (no JNI)
-add_library(dmmbase STATIC
-    ${DMM_INCLUDE_DIR}/dmmbase.h
-    ${DMM_SRC_PATH}/dmmbase.cpp
-)
-target_include_directories(dmmbase PUBLIC
-    ${DMM_INCLUDE_DIR}
-    ${EIGEN3_INCLUDE_DIR}
-)
+if (DMM_BUILD_BASE)
+    message(STATUS "Building DMM base C interop library...")
+    # Base library: core logic only (no JNI)
+    add_library(dmmbase STATIC
+        ${DMM_INCLUDE_DIR}/dmmbase.h
+        ${DMM_SRC_PATH}/dmmbase.cpp
+    )
+    target_include_directories(dmmbase PUBLIC
+        ${DMM_INCLUDE_DIR}
+        ${EIGEN3_INCLUDE_DIR}
+    )
+endif()
 
 # Conditional compilation of the JNI bindings
 if (DMM_BUILD_JNI)
@@ -61,9 +65,6 @@ if (DMM_BUILD_JNI)
         ${EIGEN3_INCLUDE_DIR}
         ${JNI_INCLUDE_DIRS}
     )
-
-    # Linking JNI library against the base library
-    target_link_libraries(dmmjni PRIVATE dmmbase)
 
     set_target_properties(dmmjni PROPERTIES
         LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}

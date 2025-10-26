@@ -8,8 +8,7 @@ jobs:
       - uses: actions/checkout@v4
       - run: sudo apt update
       - run: sudo apt install -y openjdk-21-jdk build-essential cmake gcc libeigen3-dev
-      # - run: cd libdmm && cmake -S . -B build && cmake --build build && cd -
-      - run: cd kmp && ./gradlew clean build nativeTest
+      - run: cd kmp && ./gradlew clean build nativeTest --console=plain
 
   jni__build-test-linux:
     runs-on: ubuntu-latest
@@ -17,21 +16,18 @@ jobs:
       - uses: actions/checkout@v4
       - run: sudo apt update
       - run: sudo apt install -y openjdk-21-jdk build-essential cmake gcc libeigen3-dev
-      - run: cd jvm && ./gradlew clean build test
+      - run: cd jvm && ./gradlew clean build test --console=plain
 
   kmp__build-test-macos:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
       - run: brew install cmake eigen openjdk@21
-      # - run: cd libdmm && cmake -S . -B build && cmake --build build && cd -
-      - run: cd kmp && ./gradlew clean build nativeTest
+      - run: cd kmp && ./gradlew clean build nativeTest --console=plain
 
   jni__build-test-macos:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
       - run: brew install cmake eigen openjdk@21
-      # No need for this. Command line tools are already installed
-      # - run: xcode-select --install
-      - run: cd jvm && ./gradlew clean build test
+      - run: cd jvm && ./gradlew clean build test --console=plain
