@@ -256,7 +256,7 @@ public class DenseMatrix {
                 right.rows, right.cols, right.data
         );
 
-        return new DenseMatrix(left.cols, right.cols, computed);
+        return new DenseMatrix(left.rows, right.cols, computed);
     }
 
     /**
@@ -299,11 +299,12 @@ public class DenseMatrix {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < this.cols; i++) {
-            for (int j = 0; j < this.rows; j++) sb.append("%f\t".formatted(this.data[i * this.rows + j]));
-            sb.append("\n");
+        for (int i = 0; i < this.rows; i++) {
+            for (int j = 0; j < this.cols; j++) {
+                sb.append(String.format("%.4f\t", this.data[i * this.cols + j]));
+            }
+            sb.append(System.lineSeparator());
         }
-
         return sb.toString();
     }
 
