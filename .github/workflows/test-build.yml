@@ -2,7 +2,15 @@ name: CI
 on: [push]
 
 jobs:
-  jvm__build-test-linux:
+  kmp__build-test-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt update
+      - run: sudo apt install -y openjdk-21-jdk
+      - run: cd kmp && ./gradlew clean build test
+
+  jni__build-test-linux:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -10,7 +18,14 @@ jobs:
       - run: sudo apt install -y openjdk-21-jdk build-essential cmake gcc libeigen3-dev
       - run: cd jvm && ./gradlew clean build test
 
-  jvm__build-test-macos:
+  kmp__build-test-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: brew install openjdk@21
+      - run: cd kmp && ./gradlew clean build test
+
+  jni__build-test-macos:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
