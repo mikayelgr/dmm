@@ -109,6 +109,8 @@ class DenseMatrix internal constructor(
         if (other is DenseMatrix) return equalsApprox(other)
         return super.equals(other)
     }
+
+    operator fun times(other: DenseMatrix) = mul(this, other)
 }
 
 /**
