@@ -27,7 +27,16 @@ brew install cmake eigen openjdk@21
 xcode-select --install
 ```
 
-When prompted by XCode, make sure to agree with the license agreements and follow the instructions on the screen.
+When prompted by XCode, make sure to agree with the license agreements and follow the instructions on the screen. As a final measure, on macOS, you will additionally need to run the following command, to make sure that programs like `cmake` and `make` are globally available:
+
+```bash
+sudo launchctl config user path /opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
+```
+
+On macOS, GUI apps like IntelliJ are launched by the `launchd` daemon, which doesn’t inherit your shell’s environment variables — including `PATH`. Running `sudo launchctl config user path ...` fixes this by defining a global PATH for all user processes, so GUI-launched apps can find tools like CMake or Homebrew binaries.
+
+> - https://stackoverflow.com/questions/135688/setting-environment-variables-on-os-x?utm_source=chatgpt.com
+> - https://unix.stackexchange.com/questions/89076/how-to-set-the-path-osx-applications-use?utm_source=chatgpt.com
 
 ## Structure
 
