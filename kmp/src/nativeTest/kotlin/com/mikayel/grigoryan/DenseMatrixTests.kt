@@ -14,7 +14,6 @@ import kotlin.native.runtime.NativeRuntimeApi
  */
 @OptIn(ExperimentalForeignApi::class)
 class DenseMatrixTests {
-
     /**
      * Helper to create a DenseMatrix from a DoubleArray.
      * Pins memory so native interop can access it directly.

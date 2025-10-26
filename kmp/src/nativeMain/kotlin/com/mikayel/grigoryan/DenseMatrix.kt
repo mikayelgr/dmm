@@ -11,6 +11,17 @@ import com.mikayel.grigoryan.libdmmbase.cinterop.free_matrix as bindingsFreeMatr
 import com.mikayel.grigoryan.libdmmbase.cinterop.MatrixHandle as BindingsMatrixHandle
 
 /**
+ * A custom exception type for matrix operation errors.
+ *
+ * This data class extends [Exception] and is used throughout the matrix library
+ * to signal various types of operation failures, such as invalid indices,
+ * incompatible matrix dimensions, or other matrix-specific error conditions.
+ *
+ * @property message The descriptive error message explaining what went wrong.
+ */
+data class MatrixOperationException(override val message: String) : Exception(message)
+
+/**
  * A Kotlin wrapper for a native dense matrix structure.
  *
  * This class provides direct, zero-copy access to the matrix data held in native memory.
@@ -42,7 +53,7 @@ class DenseMatrix internal constructor(
      * @throws IllegalArgumentException if the indices are out of bounds.
      */
     operator fun get(row: Int, col: Int): Double {
-        require(row in 0 until this.rows && col in 0 until this.cols)
+        throwOnInvalidRowCol(row, col, this.rows, this.cols)
         return this.dataPtr[row * this.cols + col]
     }
 
@@ -52,10 +63,10 @@ class DenseMatrix internal constructor(
      * @param row The row index (0-based).
      * @param col The column index (0-based).
      * @param value The [Double] value to write.
-     * @throws IllegalArgumentException if the indices are out of bounds.
+     * @throws MatrixOperationException if the indices are out of bounds.
      */
     operator fun set(row: Int, col: Int, value: Double) {
-        require(row in 0 until this.rows && col in 0 until this.cols)
+        throwOnInvalidRowCol(row, col, this.rows, this.cols)
         this.dataPtr[row * this.cols + col] = value
     }
 
@@ -101,6 +112,39 @@ class DenseMatrix internal constructor(
 }
 
 /**
+ * Validates matrix row and column indices and throws an exception if they are out of bounds.
+ *
+ * This private utility function ensures that the provided row and column indices are within
+ * the valid range for this matrix instance. The valid range is [0, rows) for row indices,
+ * and [0, cols) for column indices.
+ *
+ * @param row The row index to validate (0-based).
+ * @param col The column index to validate (0-based).
+ * @throws MatrixOperationException if either index is negative or exceeds the matrix bounds.
+ */
+private fun throwOnInvalidRowCol(row: Int, col: Int, nRows: Int, nCols: Int) {
+    if ((row !in 0..<nRows) || (col < 0) || (col >= nCols)) {
+        throw MatrixOperationException("Invalid row/col index: row=$row, col=$col")
+    }
+}
+
+/**
+ * Validates that two matrices can be multiplied and throws an exception if they cannot.
+ *
+ * For matrix multiplication to be valid, the number of columns in the left matrix must
+ * equal the number of rows in the right matrix (A[m×n] × B[n×p] = C[m×p]).
+ *
+ * @param left The left-hand side matrix in the multiplication.
+ * @param right The right-hand side matrix in the multiplication.
+ * @throws MatrixOperationException if the matrices have incompatible dimensions for multiplication.
+ */
+private fun throwOnInvalidMatrixMultiplication(left: DenseMatrix, right: DenseMatrix) {
+    if (left.cols != right.rows) {
+        throw MatrixOperationException("Invalid matrix multiplication: left.cols != right.rows")
+    }
+}
+
+/**
  * Performs matrix multiplication ($C = A \times B$) using the native library (e.g., Eigen).
  *
  * The resulting [DenseMatrix] is a new instance that wraps the memory
@@ -110,15 +154,12 @@ class DenseMatrix internal constructor(
  * @param left The left-hand side matrix (A).
  * @param right The right-hand side matrix (B).
  * @return A new [DenseMatrix] (C) containing the result of the multiplication.
- * @throws IllegalArgumentException if the inner dimensions do not match
+ * @throws MatrixOperationException if the inner dimensions do not match
  * (i.e., `left.cols != right.rows`).
  */
 @OptIn(ExperimentalForeignApi::class)
 fun mul(left: DenseMatrix, right: DenseMatrix): DenseMatrix {
-    if (left.cols != right.rows) {
-        throw IllegalArgumentException("Incompatible dimensions: left.cols=${left.cols}, right.rows=${right.rows}")
-    }
-
+    throwOnInvalidMatrixMultiplication(left, right)
     // We assume that the pointer will never be null, since all the parameters are
     // passed down correctly. The only edge case which might happen is the computer
     // runs out of memory, which is less probable.
