@@ -43,7 +43,10 @@ On macOS, GUI apps like IntelliJ are launched by the `launchd` daemon, which doe
 The project is structured in following directories:
 
 - `libdmm` - Contains the original C++ to JNI bindings for 2 functions, which are **multiplication** and **equivalence checking** of two matrices, both based on the [Eigen C++ library for Linear Algebra](https://eigen.tuxfamily.org/index.php?title=Main_Page). I decided to stand on the shoulders of giants and focus on maximizing the performance and enhancing readability.
-- `jvm` – Contains JNI implementation of the wrapper library for the JVM using Java, as well as tests, and benchmarks written in Java and Kotlin. The project also contains a pure Kotlin-based matrix multiplication algorithm for benchmarking and illustrative purposes.
+- `jvm` – Contains JNI implementation of the wrapper library for the JVM using Java, as well as tests, and benchmarks written in Java and Kotlin.
+- `kmp` - Contains Kotlin Native/Multiplatform bindings implementation, as well as tests, and benchmarks written in Kotlin.
+
+> `jvm` and `kmp` contain a pure Kotlin-based matrix multiplication algorithm for (TODO)benchmarking, as stated in the requirements of the task handed by JetBrains.
 
 ## Configuration
 
@@ -99,17 +102,6 @@ cmake -B ./build -S . && cd build && make && cd -
 
 This will assemble the dynamic library which can be linked to our JVM/Kotlin Multiplatform library. If the build succeeds, you will be able to find a `libdmm.dylib|.so|.dll` depending on your platform in the `libdmm/build` folder.
 
-### Verifying JNI Implementation
-
-To verify the JNI implementation, you can use the Gradle wrapper that comes with the project in the `jvm` folder. This specific folder contains a JNI implementation of the library using Java. To verify that everything functions properly, you can run the following command from the root of the project:
-
-```bash
-cd jvm
-./gradlew test
-```
-
-> Note: in case of making changes to the C++ source code, it is a good idea to run the `clean` task explicitly as well (e.g. `./gradlew clean test`) before testing anything in order to make sure that you're not running the cached library. I'm not very familiar with Gradle and tried to do my best based on my research, so I might have made some mistakes while configuring its caching.
-
 ### Building `libdmm` Manually Using CMake
 
 To get the dynamic library for `libdmm` manually, you can run the following commands from the root directory of this project:
@@ -123,3 +115,25 @@ cd build && make && cd -
 This will compile the dynamic library into a binary compatible only with your platform. You can find the generated binary under the `build` folder inside `libdmm`.
 
 > Note that building on Windows has been tested once for now and failed due to missing dependencies. You can use your favorite Windows-native package manager in order to obtain the required libraries and binaries, in which case the library should compile in theory.
+
+### Verifying JNI Implementation
+
+To verify the JNI implementation, you can use the Gradle wrapper that comes with the project in the `jvm` folder. This specific folder contains a JNI implementation of the library using Java. To verify that everything functions properly, you can run the following command from the root of the project:
+
+```bash
+cd jvm
+./gradlew test
+```
+
+> Note: in case of making changes to the C++ source code, it is a good idea to run the `clean` task explicitly as well (e.g. `./gradlew clean test`) before testing anything in order to make sure that you're not running the cached library. I'm not very familiar with Gradle and tried to do my best based on my research, so I might have made some mistakes while configuring its caching.
+
+### Verifying Kotlin Native Implementation
+
+The project for Kotlin Native bindings has been boostrapped from the official repostiory at <https://github.com/Kotlin/kmp-native-wizard/>. To verify that the K/N bindings are installed and functioning properly, run the following commands from the root of the project:
+
+```bash
+cd kmp
+./gradlew test
+```
+
+> Note that this setup assumes that you've built the `libdmm` library as described during the previous steps. (TODO) For now, the Kotlin Native implementation doesn't build the library automatically via Gradle.
