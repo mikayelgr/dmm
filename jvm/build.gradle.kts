@@ -46,7 +46,8 @@ val configureNative = tasks.register<Exec>("configureNative") {
         "cmake",
         "-S", ".",
         "-B", "build",
-        "-DCMAKE_BUILD_TYPE=Release"
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DDMM_BUILD_JNI=1"
     )
     doFirst {
         println("Configuring native build system in $nativeBuildDir")
