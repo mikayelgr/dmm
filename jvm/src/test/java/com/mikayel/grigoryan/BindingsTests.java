@@ -80,4 +80,59 @@ public class BindingsTests {
 
         assert !left.equals(right);
     }
+
+    @Test
+    // Multiplying by identity should return the same matrix
+    public void testMulIdentity() {
+        var left = new DenseMatrix(new double[][]{
+                {3, 4},
+                {5, 6}
+        });
+        var identity = new DenseMatrix(new double[][]{
+                {1, 0},
+                {0, 1}
+        });
+        var expected = new DenseMatrix(new double[][]{
+                {3, 4},
+                {5, 6}
+        });
+        assert left.mul(identity).equals(expected);
+        assert identity.mul(left).equals(expected);
+    }
+
+    @Test
+    // Multiplying with zero matrix should yield zero matrix
+    public void testMulZero() {
+        var left = new DenseMatrix(new double[][]{
+                {1, 2, 3},
+                {4, 5, 6}
+        });
+        var zero = new DenseMatrix(new double[][]{
+                {0, 0},
+                {0, 0},
+                {0, 0}
+        });
+        var expected = new DenseMatrix(new double[][]{
+                {0, 0},
+                {0, 0}
+        });
+        assert left.mul(zero).equals(expected);
+    }
+
+    @Test
+    // Multiplying a matrix by itself should not mutate original data
+    public void testSelfMul() {
+        var left = new DenseMatrix(new double[][]{
+                {2, 0},
+                {0, 2}
+        });
+        var result = left.mul(left);
+        var expected = new DenseMatrix(new double[][]{
+                {4, 0},
+                {0, 4}
+        });
+        assert result.equals(expected);
+        // Ensure original unchanged
+        assert left.equals(new DenseMatrix(new double[][]{{2, 0}, {0, 2}}));
+    }
 }
