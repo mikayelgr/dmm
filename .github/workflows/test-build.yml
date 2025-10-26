@@ -23,7 +23,7 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
-      - run: brew install openjdk@21
+      - run: brew install cmake eigen openjdk@21
       - run: cd libdmm && cmake -S . -B build && cmake --build build && cd -
       - run: cd kmp && ./gradlew clean build test
 
