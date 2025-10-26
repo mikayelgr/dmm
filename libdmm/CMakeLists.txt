@@ -8,7 +8,7 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(DMM_LIBRARY_NAME dmm)
 set(DMM_SRC_PATH ${CMAKE_SOURCE_DIR}/src)
 set(DMM_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/include)
-set(DMM_BUILD_JNI OFF CACHE BOOL "Build JNI bindings")
+set(DMM_BUILD_JNI ON CACHE BOOL "Build JNI bindings")
 
 # Ensuring that the JAVA_HOME environment variable is set
 if(NOT EXISTS $ENV{JAVA_HOME})
@@ -38,24 +38,37 @@ else()
     message(FATAL_ERROR "System Eigen not found.")
 endif()
 
+
+# Base library: core logic only (no JNI)
+add_library(dmmbase STATIC
+    ${DMM_INCLUDE_DIR}/dmmbase.h
+    ${DMM_SRC_PATH}/dmmbase.cpp
+)
+target_include_directories(dmmbase PUBLIC
+    ${DMM_INCLUDE_DIR}
+    ${EIGEN3_INCLUDE_DIR}
+)
+
 # Conditional compilation of the JNI bindings
 if (DMM_BUILD_JNI)
     # JNI library: JNI bindings, depends on base
-    add_library(dmm SHARED
-        ${DMM_INCLUDE_DIR}/dmm.h
-        ${DMM_SRC_PATH}/dmm.cpp
+    add_library(dmmjni SHARED
+        ${DMM_INCLUDE_DIR}/dmmjni.h
+        ${DMM_SRC_PATH}/dmmjni.cpp
     )
-    target_include_directories(dmm PUBLIC
+    target_include_directories(dmmjni PUBLIC
         ${DMM_INCLUDE_DIR}
-    ${EIGEN3_INCLUDE_DIR}
-    ${JNI_INCLUDE_DIRS}
-)
-    target_link_libraries(dmm PRIVATE base)
+        ${EIGEN3_INCLUDE_DIR}
+        ${JNI_INCLUDE_DIRS}
+    )
 
-    set_target_properties(dmm PROPERTIES
-    LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}
-    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}
-)
+    # Linking JNI library against the base library
+    target_link_libraries(dmmjni PRIVATE dmmbase)
+
+    set_target_properties(dmmjni PROPERTIES
+        LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}
+        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}
+    )
 endif()
 
 message(STATUS "Output directory: ${CMAKE_BINARY_DIR}")

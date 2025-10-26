@@ -7,7 +7,7 @@ package com.mikayel.grigoryan;
  * which is a safe Matrix wrapper for this class.
  */
 final class Bindings {
-    static final String LIBRARY_NAME = "dmm";
+    static final String LIBRARY_NAME = "dmmjni";
 
     static {
         // Since the dynamic library is already included in the Java's path in the
