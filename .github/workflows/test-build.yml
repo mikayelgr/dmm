@@ -7,7 +7,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: sudo apt update
-      - run: sudo apt install -y openjdk-21-jdk
+      - run: sudo apt install -y openjdk-21-jdk build-essential cmake gcc libeigen3-dev
       - run: cd libdmm && cmake -S . -B build && cmake --build build && cd -
       - run: cd kmp && ./gradlew clean build nativeTest
 
