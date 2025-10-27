@@ -29,12 +29,17 @@ data class MatrixOperationException(override val message: String) : Exception(me
  * native resources, which is crucial when the matrix is created and managed by the native library
  * (e.g., as a result of a multiplication).
  *
+ * Memory management is handled automatically:
+ * - For matrices created from Kotlin arrays, the pinned memory is automatically managed
+ * - For matrices returned from native operations, the native handle is automatically freed
+ *
  * @property rows The number of rows in the matrix.
  * @property cols The number of columns in the matrix.
  * @property dataPtr A raw C pointer to the first element (row 0, col 0) of the matrix data,
  * stored in row-major order.
  * @property nativeHandlePtr An optional C pointer to the native structure that "owns" this matrix data.
  * If non-null, [close] will use this handle to free the native resources.
+ * @property pinnedArray An optional reference to the pinned array, kept alive for the matrix lifetime.
  */
 @Suppress("EqualsOrHashCode")
 @OptIn(ExperimentalForeignApi::class)
@@ -42,7 +47,8 @@ class DenseMatrix internal constructor(
     val rows: Int,
     val cols: Int,
     internal val dataPtr: CPointer<DoubleVar>,
-    internal val nativeHandlePtr: CPointer<BindingsMatrixHandle>? = null
+    internal val nativeHandlePtr: CPointer<BindingsMatrixHandle>? = null,
+    private val pinnedArray: Pinned<DoubleArray>? = null
 ) : AutoCloseable {
     /**
      * Reads an element directly from the native memory buffer.
@@ -50,7 +56,7 @@ class DenseMatrix internal constructor(
      * @param row The row index (0-based).
      * @param col The column index (0-based).
      * @return The [Double] value at the specified position.
-     * @throws IllegalArgumentException if the indices are out of bounds.
+     * @throws MatrixOperationException if the indices are out of bounds.
      */
     operator fun get(row: Int, col: Int): Double {
         throwOnInvalidRowCol(row, col, this.rows, this.cols)
@@ -71,17 +77,16 @@ class DenseMatrix internal constructor(
     }
 
     /**
-     * Frees the underlying native matrix resources, if this [DenseMatrix] instance
-     * was created with a [nativeHandlePtr].
+     * Frees the underlying native matrix resources and unpins any pinned memory.
      *
      * This allows for deterministic cleanup, which is useful in resource-sensitive
-     * contexts like loops or benchmarks. If this instance does not own a native handle
-     * (e.g., it wraps data allocated elsewhere), this method has no effect.
+     * contexts like loops or benchmarks.
      */
     override fun close() {
         this.nativeHandlePtr?.let {
             bindingsFreeMatrix(it)
         }
+        this.pinnedArray?.unpin()
     }
 
     /**
@@ -111,6 +116,77 @@ class DenseMatrix internal constructor(
     }
 
     operator fun times(other: DenseMatrix) = mul(this, other)
+
+    companion object {
+        /**
+         * Creates a new [DenseMatrix] from a [DoubleArray] containing row-major data.
+         *
+         * Memory management is handled automatically - the array is pinned and the pinned
+         * reference is stored internally. Call [close] to release resources when done.
+         *
+         * @param rows The number of rows in the matrix.
+         * @param cols The number of columns in the matrix.
+         * @param values A [DoubleArray] containing the matrix data in row-major order.
+         * The size must equal `rows * cols`.
+         * @return A new [DenseMatrix] instance with automatic memory management.
+         * @throws MatrixOperationException if rows or cols are non-positive, or if the array size doesn't match `rows * cols`.
+         */
+        @OptIn(ExperimentalForeignApi::class)
+        fun fromArray(rows: Int, cols: Int, values: DoubleArray): DenseMatrix {
+            if (rows <= 0 || cols <= 0) {
+                throw MatrixOperationException(
+                    "Matrix dimensions must be positive: rows=$rows, cols=$cols"
+                )
+            }
+            if (values.size != rows * cols) {
+                throw MatrixOperationException(
+                    "Array size mismatch: expected ${rows * cols} elements (${rows}x${cols}), got ${values.size}"
+                )
+            }
+            val pinned = values.pin()
+            return DenseMatrix(rows, cols, pinned.addressOf(0), pinnedArray = pinned)
+        }
+
+        /**
+         * Creates a new [DenseMatrix] filled with zeros.
+         *
+         * @param rows The number of rows in the matrix.
+         * @param cols The number of columns in the matrix.
+         * @return A new [DenseMatrix] instance filled with zeros.
+         * @throws MatrixOperationException if rows or cols are non-positive.
+         */
+        fun zeros(rows: Int, cols: Int): DenseMatrix {
+            return fromArray(rows, cols, DoubleArray(rows * cols) { 0.0 })
+        }
+
+        /**
+         * Creates a new [DenseMatrix] filled with ones.
+         *
+         * @param rows The number of rows in the matrix.
+         * @param cols The number of columns in the matrix.
+         * @return A new [DenseMatrix] instance filled with ones.
+         * @throws MatrixOperationException if rows or cols are non-positive.
+         */
+        fun ones(rows: Int, cols: Int): DenseMatrix {
+            return fromArray(rows, cols, DoubleArray(rows * cols) { 1.0 })
+        }
+
+        /**
+         * Creates a new identity matrix.
+         *
+         * @param size The size of the square identity matrix.
+         * @return A new [DenseMatrix] instance representing an identity matrix.
+         * @throws MatrixOperationException if size is non-positive.
+         */
+        fun identity(size: Int): DenseMatrix {
+            val values = DoubleArray(size * size) { index ->
+                val row = index / size
+                val col = index % size
+                if (row == col) 1.0 else 0.0
+            }
+            return fromArray(size, size, values)
+        }
+    }
 }
 
 /**

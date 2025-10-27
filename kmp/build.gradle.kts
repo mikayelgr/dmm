@@ -68,7 +68,8 @@ val configureDmmDependency = tasks.register<Exec>("buildDmmDependency") {
         "-B",
         "${libdmmRoot.absolutePath}/build",
         "-DCMAKE_BUILD_TYPE=Release",
-        "-DDMM_BUILD_JNI=0" // Disable conditional JNI compilation for speedup
+        "-DDMM_BUILD_JNI=0", // Disable conditional JNI compilation for speedup
+        "-DDMM_BUILD_BASE=1", // Disable conditional JNI compilation for speedup
     )
 }
 

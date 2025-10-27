@@ -16,12 +16,10 @@ import kotlin.native.runtime.NativeRuntimeApi
 class DenseMatrixTests {
     /**
      * Helper to create a DenseMatrix from a DoubleArray.
-     * Pins memory so native interop can access it directly.
+     * Memory is automatically managed by the DenseMatrix class.
      */
     private fun createMatrix(rows: Int, cols: Int, values: DoubleArray): DenseMatrix {
-        require(values.size == rows * cols)
-        val pinned = values.pin()
-        return DenseMatrix(rows, cols, pinned.addressOf(0))
+        return DenseMatrix.fromArray(rows, cols, values)
     }
 
     /**
@@ -145,5 +143,168 @@ class DenseMatrixTests {
 
         assertEquals(a.nativeHandlePtr, null)
         assertEquals(b.nativeHandlePtr, null)
+    }
+
+    /**
+     * Tests that creating a matrix with invalid array size throws MatrixOperationException.
+     */
+    @Test
+    fun testFromArray_invalidArraySize() {
+        val values = doubleArrayOf(1.0, 2.0, 3.0) // 3 elements
+        val exception = assertFailsWith<MatrixOperationException> {
+            DenseMatrix.fromArray(2, 2, values) // expects 4 elements
+        }
+        assertTrue(exception.message?.contains("Array size mismatch") == true)
+    }
+
+    /**
+     * Tests that creating a matrix with non-positive dimensions throws MatrixOperationException.
+     */
+    @Test
+    fun testFromArray_invalidDimensions() {
+        val values = doubleArrayOf(1.0, 2.0, 3.0, 4.0)
+
+        // Test zero rows
+        assertFailsWith<MatrixOperationException> {
+            DenseMatrix.fromArray(0, 4, values)
+        }
+
+        // Test negative rows
+        assertFailsWith<MatrixOperationException> {
+            DenseMatrix.fromArray(-1, 4, values)
+        }
+
+        // Test zero cols
+        assertFailsWith<MatrixOperationException> {
+            DenseMatrix.fromArray(4, 0, values)
+        }
+
+        // Test negative cols
+        assertFailsWith<MatrixOperationException> {
+            DenseMatrix.fromArray(4, -1, values)
+        }
+    }
+
+    /**
+     * Tests the zeros factory method creates a matrix filled with zeros.
+     */
+    @Test
+    fun testZeros() {
+        val zero = DenseMatrix.zeros(3, 2)
+        assertEquals(3, zero.rows)
+        assertEquals(2, zero.cols)
+        for (r in 0 until zero.rows) {
+            for (c in 0 until zero.cols) {
+                assertEquals(0.0, zero[r, c], 1e-9)
+            }
+        }
+    }
+
+    /**
+     * Tests the ones factory method creates a matrix filled with ones.
+     */
+    @Test
+    fun testOnes() {
+        val ones = DenseMatrix.ones(2, 3)
+        assertEquals(2, ones.rows)
+        assertEquals(3, ones.cols)
+        for (r in 0 until ones.rows) {
+            for (c in 0 until ones.cols) {
+                assertEquals(1.0, ones[r, c], 1e-9)
+            }
+        }
+    }
+
+    /**
+     * Tests the identity factory method creates an identity matrix.
+     */
+    @Test
+    fun testIdentity() {
+        val id = DenseMatrix.identity(3)
+        assertEquals(3, id.rows)
+        assertEquals(3, id.cols)
+        for (r in 0 until id.rows) {
+            for (c in 0 until id.cols) {
+                val expected = if (r == c) 1.0 else 0.0
+                assertEquals(expected, id[r, c], 1e-9, "Identity matrix should have 1s on diagonal and 0s elsewhere")
+            }
+        }
+    }
+
+    /**
+     * Tests that accessing out of bounds indices throws MatrixOperationException.
+     */
+    @Test
+    fun testGet_outOfBounds() {
+        val matrix = DenseMatrix.fromArray(2, 2, doubleArrayOf(1.0, 2.0, 3.0, 4.0))
+
+        // Test negative row
+        assertFailsWith<MatrixOperationException> {
+            matrix[-1, 0]
+        }
+
+        // Test negative col
+        assertFailsWith<MatrixOperationException> {
+            matrix[0, -1]
+        }
+
+        // Test row out of bounds
+        assertFailsWith<MatrixOperationException> {
+            matrix[2, 0]
+        }
+
+        // Test col out of bounds
+        assertFailsWith<MatrixOperationException> {
+            matrix[0, 2]
+        }
+    }
+
+    /**
+     * Tests that setting out of bounds indices throws MatrixOperationException.
+     */
+    @Test
+    fun testSet_outOfBounds() {
+        val matrix = DenseMatrix.fromArray(2, 2, doubleArrayOf(1.0, 2.0, 3.0, 4.0))
+
+        // Test negative row
+        assertFailsWith<MatrixOperationException> {
+            matrix[-1, 0] = 99.0
+        }
+
+        // Test row out of bounds
+        assertFailsWith<MatrixOperationException> {
+            matrix[2, 0] = 99.0
+        }
+    }
+
+    /**
+     * Tests that the matrix can be modified after creation.
+     */
+    @Test
+    fun testSet_modifyMatrix() {
+        val matrix = DenseMatrix.fromArray(2, 2, doubleArrayOf(1.0, 2.0, 3.0, 4.0))
+        matrix[0, 0] = 99.0
+        assertEquals(99.0, matrix[0, 0], 1e-9)
+        assertEquals(2.0, matrix[0, 1], 1e-9) // other elements unchanged
+    }
+
+    /**
+     * Tests that close() properly releases resources.
+     */
+    @Test
+    fun testClose_releasesResources() {
+        val matrix = DenseMatrix.fromArray(2, 2, doubleArrayOf(1.0, 2.0, 3.0, 4.0))
+        matrix.close() // Should not throw
+    }
+
+    /**
+     * Tests using the matrix with use {} block for automatic cleanup.
+     */
+    @Test
+    fun testUseBlock() {
+        val result = DenseMatrix.fromArray(2, 2, doubleArrayOf(1.0, 2.0, 3.0, 4.0)).use { matrix ->
+            matrix[0, 0] + matrix[1, 1]
+        }
+        assertEquals(5.0, result, 1e-9)
     }
 }
